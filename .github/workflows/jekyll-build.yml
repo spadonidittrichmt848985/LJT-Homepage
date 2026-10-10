@@ -1,15 +1,14 @@
 name: Jekyll build
 
 on:
-  # Run after bad-pr check
-  workflow_run:
-    workflows: ["Cleanup bad PR"]
-    branches: [main]
-    types:
-      - completed
-      
+  push:
+    branches: [master]
+  workflow_dispatch:
+
 permissions:
   contents: read
+  pages: write
+  id-token: write
 
 concurrency:
   group: jekyll-build-${{ github.ref }}
@@ -32,3 +31,22 @@ jobs:
         run: bundle exec jekyll build --strict_front_matter
         env:
           JEKYLL_ENV: production
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload site artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
