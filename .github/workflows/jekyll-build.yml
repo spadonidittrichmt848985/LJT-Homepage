@@ -30,47 +30,6 @@ jobs:
         env:
           JEKYLL_ENV: production
 
-      - name: Inspect generated pages
-        run: |
-          python3 - <<'PY'
-          from html.parser import HTMLParser
-          from pathlib import Path
-
-          class PageText(HTMLParser):
-              def __init__(self):
-                  super().__init__()
-                  self.parts = []
-                  self.links = []
-                  self.skip = 0
-
-              def handle_starttag(self, tag, attrs):
-                  if tag in ('script', 'style'):
-                      self.skip += 1
-                  if tag == 'a':
-                      for key, value in attrs:
-                          if key == 'href':
-                              self.links.append(value)
-
-              def handle_endtag(self, tag):
-                  if tag in ('script', 'style'):
-                      self.skip -= 1
-
-              def handle_data(self, data):
-                  if not self.skip and data.strip():
-                      self.parts.append(data.strip())
-
-          for page in ['_site/index.html', '_site/publications/index.html']:
-              parser = PageText()
-              parser.feed(Path(page).read_text())
-              print('=== ' + page + ' ===')
-              print(' | '.join(parser.parts))
-              print('LINKS: ' + ', '.join(parser.links))
-
-          print('=== GENERATED HTML FILES ===')
-          for page in sorted(Path('_site').rglob('*.html')):
-              print(page)
-          PY
-
       - name: Deploy built site to the gh-pages branch
         uses: peaceiris/actions-gh-pages@v4
         with:
